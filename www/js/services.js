@@ -1,75 +1,124 @@
 angular.module('starter.services', [])
 
-  .service('LoginService', function($q) {
-    return {
-      loginUser: function(name, pw) {
-        var deferred = $q.defer();
-        var promise = deferred.promise;
+.service('AuthService', function($q, $http, USER_ROLES) {
+  var LOCAL_TOKEN_KEY = 'userToken';
+  var username = '';
+  var isAuthenticated = false;
+  var role = '';
+  var authToken;
+    var userRole = '';
+    var serverUrl = 'http://192.168.1.102:3000/auth/login';
+    var SEVER_TOKEN_KEY = 'serverTokenKey';
 
-        if (name == 'abc' && pw == '123') {
-          deferred.resolve('Welcome ' + name + '!');
-        } else {
-          deferred.reject('Wrong credentials.');
-        }
-        promise.success = function(fn) {
-          promise.then(fn);
-          return promise;
-        }
-        promise.error = function(fn) {
-          promise.then(null, fn);
-          return promise;
-        }
-        return promise;
-      }
+  function loadUserCredentials() {
+    var token = window.localStorage.getItem(LOCAL_TOKEN_KEY);
+    var serverToken = window.localStorage.getItem(SEVER_TOKEN_KEY);
+    if (token) {
+      useCredentials(token,serverToken);
     }
-  })
+  }
 
+  function storeUserCredentials(token,serverToken) {
+    window.localStorage.setItem(LOCAL_TOKEN_KEY, token);
+    window.localStorage.setItem(SEVER_TOKEN_KEY,serverToken);
+    useCredentials(token);
+  }
 
-.factory('Chats', function() {
-  // Might use a resource here that returns a JSON array
+  function useCredentials(token,serverToken) {
+    userRole = token.role;
+    //username = token.split('.')[0];
+    isAuthenticated = true;
+    authToken = token;
 
-  // Some fake testing data
-  var chats = [{
-    id: 0,
-    name: 'Ben Sparrow',
-    lastText: 'You on your way?',
-    face: 'img/ben.png'
-  }, {
-    id: 1,
-    name: 'Max Lynx',
-    lastText: 'Hey, it\'s me',
-    face: 'img/max.png'
-  }, {
-    id: 2,
-    name: 'Adam Bradleyson',
-    lastText: 'I should buy a boat',
-    face: 'img/adam.jpg'
-  }, {
-    id: 3,
-    name: 'Perry Governor',
-    lastText: 'Look at my mukluks!',
-    face: 'img/perry.png'
-  }, {
-    id: 4,
-    name: 'Mike Harrington',
-    lastText: 'This is wicked good ice cream.',
-    face: 'img/mike.png'
-  }];
+    if (userRole == 'admin') {
+      role = USER_ROLES.admin
+    }
+    if (userRole == 'user') {
+      role = USER_ROLES.public
+    }
+
+    // Set the token as header for your requests!
+    //$http.defaults.headers.common['X-Auth-Token'] = token;
+    $http.defaults.headers.common['Authorization'] = "ServerToken= "+serverToken;
+  }
+
+  function destroyUserCredentials() {
+    authToken = undefined;
+    username = '';
+    isAuthenticated = false;
+    $http.defaults.headers.common['X-Auth-Token'] = undefined;
+    window.localStorage.removeItem(LOCAL_TOKEN_KEY);
+    window.localStorage.removeItem(SEVER_TOKEN_KEY);
+
+  }
+
+  var login = function(name, pw) {
+    //var userData = {
+    //  email: 'admin@gmail.com',
+    //  password: 'admin'
+    //}
+    var userData = {
+      email: name,
+      password: pw
+    }
+    return $q(function(resolve, reject) {
+        // Make a request and receive your auth token from your server
+      if(name == 'admin@gmail.com' && pw == 'admin') {
+        $http.post(serverUrl,userData).success(function (data) {
+          console.log(data);
+          storeUserCredentials(data.user,data.token);
+          resolve('Admin Login success.');
+        }).error(function (err) {
+          reject('Login Failed.');
+        });
+      }else{
+        $http.post(serverUrl,userData).success(function (data) {
+          storeUserCredentials(data.user,data.token);
+          console.log(data);
+          resolve('Login success.');
+        }).error(function (err) {
+          reject('Login Failed.');
+        });
+      }
+    });
+  };
+
+  var logout = function() {
+    destroyUserCredentials();
+  };
+
+  var isAuthorized = function(authorizedRoles) {
+    if (!angular.isArray(authorizedRoles)) {
+      authorizedRoles = [authorizedRoles];
+    }
+    return (isAuthenticated && authorizedRoles.indexOf(role) !== -1);
+  };
+
+  loadUserCredentials();
 
   return {
-    all: function() {
-      return chats;
-    },
-    remove: function(chat) {
-      chats.splice(chats.indexOf(chat), 1);
-    },
-    get: function(chatId) {
-      for (var i = 0; i < chats.length; i++) {
-        if (chats[i].id === parseInt(chatId)) {
-          return chats[i];
-        }
-      }
-      return null;
-    }
+    login: login,
+    logout: logout,
+    isAuthorized: isAuthorized,
+    isAuthenticated: function() {return isAuthenticated;},
+    username: function() {return username;},
+    role: function() {return role;},
+    serverToken : function() {return getServerToken;}
   };
-});
+})
+
+  .factory('AuthInterceptor', function ($rootScope, $q, AUTH_EVENTS) {
+    return {
+      responseError: function (response) {
+        $rootScope.$broadcast({
+          401: AUTH_EVENTS.notAuthenticated,
+          403: AUTH_EVENTS.notAuthorized
+        }[response.status], response);
+        return $q.reject(response);
+      }
+    };
+  })
+
+  .config(function ($httpProvider) {
+    $httpProvider.interceptors.push('AuthInterceptor');
+  });
