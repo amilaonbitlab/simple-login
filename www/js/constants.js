@@ -11,5 +11,5 @@ angular.module('starter')
   .constant('USER_ROLES', {
     admin: 'admin_role',
     public: 'public_role'
-  });
-  //.constant('SERVER_URL_Auth', 'http://192.168.1.3:3000/auth/login');
+  })
+  .constant('SERVER_URL', 'http://192.168.1.102:3000/');

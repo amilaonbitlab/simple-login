@@ -1,13 +1,12 @@
 angular.module('starter.services', [])
 
-.service('AuthService', function($q, $http, USER_ROLES) {
+.service('AuthService', function($q, $http, USER_ROLES,SERVER_URL) {
   var LOCAL_TOKEN_KEY = 'userToken';
   var username = '';
   var isAuthenticated = false;
   var role = '';
   var authToken;
     var userRole = '';
-    var serverUrl = 'http://192.168.1.102:3000/auth/login';
     var SEVER_TOKEN_KEY = 'serverTokenKey';
 
   function loadUserCredentials() {
@@ -21,7 +20,7 @@ angular.module('starter.services', [])
   function storeUserCredentials(token,serverToken) {
     window.localStorage.setItem(LOCAL_TOKEN_KEY, token);
     window.localStorage.setItem(SEVER_TOKEN_KEY,serverToken);
-    useCredentials(token);
+    useCredentials(token,serverToken);
   }
 
   function useCredentials(token,serverToken) {
@@ -46,17 +45,13 @@ angular.module('starter.services', [])
     authToken = undefined;
     username = '';
     isAuthenticated = false;
-    $http.defaults.headers.common['X-Auth-Token'] = undefined;
+    $http.defaults.headers.common['Authorization'] = undefined;
     window.localStorage.removeItem(LOCAL_TOKEN_KEY);
     window.localStorage.removeItem(SEVER_TOKEN_KEY);
 
   }
 
   var login = function(name, pw) {
-    //var userData = {
-    //  email: 'admin@gmail.com',
-    //  password: 'admin'
-    //}
     var userData = {
       email: name,
       password: pw
@@ -64,7 +59,7 @@ angular.module('starter.services', [])
     return $q(function(resolve, reject) {
         // Make a request and receive your auth token from your server
       if(name == 'admin@gmail.com' && pw == 'admin') {
-        $http.post(serverUrl,userData).success(function (data) {
+        $http.post(SERVER_URL+'auth/login',userData).success(function (data) {
           console.log(data);
           storeUserCredentials(data.user,data.token);
           resolve('Admin Login success.');
@@ -72,7 +67,7 @@ angular.module('starter.services', [])
           reject('Login Failed.');
         });
       }else{
-        $http.post(serverUrl,userData).success(function (data) {
+        $http.post(SERVER_URL+'auth/login',userData).success(function (data) {
           storeUserCredentials(data.user,data.token);
           console.log(data);
           resolve('Login success.');
@@ -121,4 +116,15 @@ angular.module('starter.services', [])
 
   .config(function ($httpProvider) {
     $httpProvider.interceptors.push('AuthInterceptor');
-  });
+  })
+
+  .service('dashService', ['$http','SERVER_URL',dashService]);
+
+function dashService($http,SERVER_URL) {
+  return {
+    getAllApps: function () {
+      return $http.get(SERVER_URL+'api/dashboard/allApps');
+    }
+  }
+};
+

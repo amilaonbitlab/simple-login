@@ -41,36 +41,19 @@ angular.module('starter.controller', [])
     };
   })
 
-  .controller('DashCtrl', function($scope, $state, $http, $ionicPopup, AuthService) {
+  .controller('DashCtrl', function($scope, $state, $http, $ionicPopup, AuthService, dashService) {
 
-
+    $scope.getAllApps = function(){
+      dashService.getAllApps().success(function(data){
+        console.log(data);
+        $scope.response = data;
+      });
+    };
     $scope.logout = function() {
+      $scope.response = '';
       AuthService.logout();
       $state.go('login');
+
     };
 
-    $scope.performValidRequest = function() {
-      $http.get('http://192.168.1.102:3000/api/dashboard/allApps').then(
-        function(result) {
-          $scope.response = result;
-        });
-    };
-
-    $scope.performUnauthorizedRequest = function() {
-      $http.get('http://localhost:8100/notauthorized').then(
-        function(result) {
-          // No result here..
-        }, function(err) {
-          $scope.response = err;
-        });
-    };
-
-    $scope.performInvalidRequest = function() {
-      $http.get('http://localhost:8100/notauthenticated').then(
-        function(result) {
-          // No result here..
-        }, function(err) {
-          $scope.response = err;
-        });
-    };
   });

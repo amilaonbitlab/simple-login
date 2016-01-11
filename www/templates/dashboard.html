@@ -4,21 +4,20 @@
   </ion-nav-buttons>
 
   <ion-content class="padding">
-    <div class="row"><div class="col text-center">
+    <div class="row"><spam class="col text-center">
       <h3 class="title">Welcome {{username}}!</h3>
       This could be your Dashboard.
-      <br><br><br>
-      <button class="button button-full button-positive" ng-click="performValidRequest()">
-        Make Valid Request
+      <br>
+
+      <button class="button button-full button-positive" ng-click="getAllApps()">
+        View MY Apps
       </button>
-      <button class="button button-full button-energized" ng-click="performUnauthorizedRequest()">
-        Make Request for unauthorized resource
-      </button>
-      <button class="button button-full button-assertive" ng-click="performInvalidRequest()">
-        Make Request without valid token
-      </button>
-      <br><br>
-      {{response}}
-    </div></div>
+      <br>
+      <!--{{response}}-->
+      <div ng-repeat="oneRes in response">
+        App Name : {{oneRes.appName}}
+      </div>
+    </spam>
+    </div>
   </ion-content>
 </ion-view>

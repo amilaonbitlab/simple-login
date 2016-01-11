@@ -95,26 +95,26 @@ angular.module('starter', ['ionic','starter.controller','starter.services'])
             controller: 'DashCtrl'
           }
         }
-      })
-      .state('main.public', {
-        url: 'main/public',
-        views: {
-          'public-tab': {
-            templateUrl: 'templates/public.html'
-          }
-        }
-      })
-      .state('main.admin', {
-        url: 'main/admin',
-        views: {
-          'admin-tab': {
-            templateUrl: 'templates/admin.html'
-          }
-        },
-        data: {
-          authorizedRoles: [USER_ROLES.admin]
-        }
       });
+      //.state('main.public', {
+      //  url: 'main/public',
+      //  views: {
+      //    'public-tab': {
+      //      templateUrl: 'templates/public.html'
+      //    }
+      //  }
+      //})
+      //.state('main.admin', {
+      //  url: 'main/admin',
+      //  views: {
+      //    'admin-tab': {
+      //      templateUrl: 'templates/admin.html'
+      //    }
+      //  },
+      //  data: {
+      //    authorizedRoles: [USER_ROLES.admin]
+      //  }
+      //});
 
     // Thanks to Ben Noblet!
     $urlRouterProvider.otherwise(function ($injector, $location) {
